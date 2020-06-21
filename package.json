@@ -1,0 +1,31 @@
+{
+  "name": "staticicecrawler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+	"start": "ts-node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "commander": "^5.1.0",
+    "lodash": "^4.17.15",
+    "puppeteer": "^4.0.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.5",
+    "url-parse": "^1.4.7"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.18",
+    "@types/lodash": "^4.14.155",
+    "@types/node": "^14.0.13",
+    "@types/request": "^2.48.5",
+    "@types/request-promise": "^4.1.46",
+    "@types/url-parse": "^1.4.3",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  }
+}
