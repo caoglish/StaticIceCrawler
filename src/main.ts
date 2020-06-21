@@ -10,8 +10,14 @@ const DESCRIPTION_COLUMN=1
 const TARGET_CONTENT_TAG = "table table table table table"
 const domain = "https://www.staticice.com.au"
 const baseUrl = domain+"/cgi-bin/search.cgi"
-let searchUrl = baseUrl + "?" +"price-min=&q=msi+nvidia+2080+ti&pda=0"
+let searchUrl = baseUrl + "?" +"price-min=&q=msi+nvidia+2080+ti"
 
+function makeSearchUrl(company, model){
+	const nvidia ='nvidia'
+	let query = company + "+" + nvidia+"+"+model.replace(" ","+");
+	return baseUrl + "?" + "price-min=&q="+query
+
+}
 
 const puppeteer = require('puppeteer');
 
