@@ -1,8 +1,7 @@
-import DomReader from './lib/DomReader';
 import puppeteer = require('puppeteer');
-import UrlParser = require('url-parse');
 import cheerio = require("cheerio");
 import _ = require("lodash");
+import moment = require("moment")
 const { Parser } = require('json2csv');
 const fs = require('fs');
 
@@ -14,17 +13,12 @@ const domain = "https://www.staticice.com.au"
 const baseUrl = domain + "/cgi-bin/search.cgi"
 let searchUrl;
 
-
 const parser = new Parser();
 
-let modelList = ["GTX 1050 TI", "GTX 1650", "GTX 1650 SUPER", "GTX 1660", "GTX 1660 SUPER", "GTX 1660 TI","RTX 2060", "RTX 2060 SUPER", ["RTX 2070 SUPER",600], "RTX 2080 SUPER", ["RTX 2080 TI", 1400]]
+let modelList = ["GTX 1050 TI", "GTX 1650", "GTX 1650 SUPER", "GTX 1660", "GTX 1660 SUPER", "GTX 1660 TI", "RTX 2060", "RTX 2060 SUPER", ["RTX 2070 SUPER", 600], "RTX 2080 SUPER", ["RTX 2080 TI", 1400]]
 let companyList = ["MSI", "ASUS", "Inno3D", "GALAX", "Gigabyte", "EVGA", "ZOTAC"]
-
-
-
 // let modelList = [["RTX 2080 TI", 1000], "GTX 1660"]
 // let companyList = ["MSI", "ASUS", "Inno3D", "GALAX", "Gigabyte", "EVGA", "ZOTAC"]
-
 
 class PageCrawler {
 	page = null;
@@ -63,25 +57,24 @@ function makeSearchUrl(company, model) {
 
 //rule 1: if no ti, no super, description should no ti and no super
 function ruleVerify(model, description): boolean {
-	model =_.isArray(model)?model[0]:model
-
-	
+	model = _.isArray(model) ? model[0] : model
 	if (model.includes("TI") || model.includes("SUPER")) return true;
-
 	if (description.toLowerCase().includes(" ti ") || description.toLowerCase().includes("super")) {
 		return false;
 	}
 	return true;
-
 }
 
 //rule 2: if model with ti, should search exact word, so result will not have super keyword or just normal version.
-function ruleModelTi(model){
+function ruleModelTi(model) {
 	let addSlash = (str) => {
 		return "\"" + str + "\""
 	}
-	return  model.includes("TI") ? addSlash(model) : model	
+	return model.includes("TI") ? addSlash(model) : model
+}
 
+function now() {
+	return moment().format('[[]YYYY-MM-DD HH.mm.ss[]]');
 }
 
 (async () => {
@@ -90,7 +83,6 @@ function ruleModelTi(model){
 	let pageCrawler = new PageCrawler(page);
 	let crawlResultList = [];
 
-
 	for (let model of modelList) {
 		for (let company of companyList) {
 			searchUrl = makeSearchUrl(company, model);
@@ -98,8 +90,8 @@ function ruleModelTi(model){
 			let searchResult = await pageCrawler.crawl(searchUrl);
 			//let searchResult={price:"$333",description:"ddd"}
 			if (_.isNil(searchResult)) continue;
-		
-			if (!ruleVerify(model, searchResult.description)) 	continue;
+
+			if (!ruleVerify(model, searchResult.description)) continue;
 			let oneResult = {
 				company,
 				model: _.isArray(model) ? model[0] : model,
@@ -107,7 +99,7 @@ function ruleModelTi(model){
 				price: searchResult.price,
 				description: searchResult.description,
 			};
-			
+
 			console.log(oneResult);
 			crawlResultList.push(oneResult);
 		}
@@ -117,5 +109,5 @@ function ruleModelTi(model){
 	console.log(crawlResultList);
 	const csvOutput = parser.parse(crawlResultList);
 	console.log(csvOutput);
-	fs.writeFileSync('StaticIcesearchResult.csv', csvOutput);
+	fs.writeFileSync('StaticIcesearchResult' + now()+'.csv', csvOutput);
 })();

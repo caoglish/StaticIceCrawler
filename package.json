@@ -14,18 +14,13 @@
     "commander": "^5.1.0",
     "json2csv": "^5.0.1",
     "lodash": "^4.17.15",
-    "puppeteer": "^4.0.0",
-    "request": "^2.88.2",
-    "request-promise": "^4.2.5",
-    "url-parse": "^1.4.7"
+    "moment": "^2.27.0",
+    "puppeteer": "^4.0.0"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.18",
     "@types/lodash": "^4.14.155",
     "@types/node": "^14.0.13",
-    "@types/request": "^2.48.5",
-    "@types/request-promise": "^4.1.46",
-    "@types/url-parse": "^1.4.3",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.5"
   }
