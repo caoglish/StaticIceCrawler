@@ -2,7 +2,7 @@
 
 ## install
 - install nodejs
-- install git
+- install git( or just download zip file from "clone or download" button)
   
 ```
 git clone https://github.com/caoglish/StaticIceCrawler.git
