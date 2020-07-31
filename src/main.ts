@@ -11,14 +11,19 @@ const DESCRIPTION_COLUMN = 1
 const TARGET_CONTENT_TAG = "table table table table table"
 const domain = "https://www.staticice.com.au"
 const baseUrl = domain + "/cgi-bin/search.cgi"
+const csvFolder = "./csv"
+const csvArchivedFolder = csvFolder + "/archived"
 let searchUrl;
 
 const parser = new Parser();
 
-let modelList = ["GTX 1050 TI", "GTX 1650", "GTX 1650 SUPER", "GTX 1660", "GTX 1660 SUPER", "GTX 1660 TI", "RTX 2060", "RTX 2060 SUPER", ["RTX 2070 SUPER", 600], "RTX 2080 SUPER", ["RTX 2080 TI", 1400]]
-let companyList = ["MSI", "ASUS", "Inno3D", "GALAX", "Gigabyte", "EVGA", "ZOTAC"]
-// let modelList = [["RTX 2080 TI", 1000], "GTX 1660"]
-// let companyList = ["MSI", "ASUS", "Inno3D", "GALAX", "Gigabyte", "EVGA", "ZOTAC"]
+let AMDList = ["RX 5700", "RX 5700 XT", "RX 5600 XT", "RX 5500 XT", "RX Vega 64", "RX 580","RX 570","RX 560","RX 550"];
+let nVidiaList=["GTX 1050 TI", "GTX 1650", "GTX 1650 SUPER", "GTX 1660", "GTX 1660 SUPER", "GTX 1660 TI", "RTX 2060", "RTX 2060 SUPER", ["RTX 2070 SUPER", 600], "RTX 2080 SUPER", ["RTX 2080 TI", 1400]]
+//let AMDList = ["RX 5700"];
+let commonCompanyList = ["MSI", "ASUS", "Gigabyte"]
+let aVidiaCompanyList = commonCompanyList.concat(["Inno3D", "GALAX", "EVGA", "ZOTAC"])
+let AMDCompnayList = commonCompanyList.concat(["ASRock", "HIS", "PowerColor", "XFX", "Sapphire"])
+
 
 class PageCrawler {
 	page = null;
@@ -44,9 +49,9 @@ class PageCrawler {
 
 function makeSearchUrl(company, model) {
 	if (_.isArray(model)) {
-		model = ruleModelTi(model[0]) + " price:" + model[1]
+		model = ruleModelSuffix(model[0]) + " price:" + model[1]
 	} else {
-		model = ruleModelTi(model)
+		model = ruleModelSuffix(model)
 	}
 
 	let query = company + "+" + model.replace(/ /g, "+");
@@ -66,18 +71,69 @@ function ruleVerify(model, description): boolean {
 }
 
 //rule 2: if model with ti, should search exact word, so result will not have super keyword or just normal version.
-function ruleModelTi(model) {
+function ruleModelSuffix(model) {
 	let addSlash = (str) => {
 		return "\"" + str + "\""
 	}
-	return model.includes("TI") ? addSlash(model) : model
+	return model.match(/\d+ \w+$/) ? addSlash(model) : model
 }
 
+
+let amdRuleVerify = (model: string, description: string): boolean => {
+	let modelNoSpace = model.replace(/ /g, "")
+	if (model === "RX Vega 64") return true
+	if (description.includes(model)) {
+		if (description.includes(model + "0")) return false;
+		if (description.includes(model + " XT")) return false;
+	}
+	if (description.includes(modelNoSpace)) {
+		if (description.includes(modelNoSpace + "0")) return false;
+		if (description.includes(modelNoSpace + "XT")) return false;
+	}
+	if (!description.includes(model) && !description.includes(modelNoSpace)) return false;
+	return true;
+}
 function now() {
 	return moment().format('[[]YYYY-MM-DD HH.mm.ss[]]');
 }
 
-(async () => {
+function nVidiaVerifyFun(model, searchResult) {
+	if (ruleVerify(model, searchResult.description)) return true;
+	return false;
+}
+
+function AmdVerifyFun(model, searchResult) {
+	if (amdRuleVerify(model, searchResult.description)) return true;
+	return false;
+	// return true;
+}
+
+
+function makeFolder(folder) {
+	if (!fs.existsSync(folder)) {
+		fs.mkdirSync(folder);
+	}
+}
+
+function makeCsvFilePath(filename) {
+	return csvFolder + "/" + filename + now() + '.csv'
+}
+
+async function archiveCsvFiles() {
+	makeFolder(csvFolder);
+	makeFolder(csvArchivedFolder);
+	let filelist = fs.readdirSync(csvFolder, { withFileTypes: true }).filter((dirent) => dirent.isFile()).map((dirent) => dirent.name);;
+	//console.log(filelist);
+	if (filelist.length > 0) {
+		for (let file of filelist) {
+			fs.renameSync(csvFolder + "/" + file, csvArchivedFolder + "/" + file);
+			console.log(file + " have been archived.");
+		}
+		console.log('Move complete.');
+	}
+}
+
+async function crawl(companyList, modelList, verifyFun, filename) {
 	const browser = await puppeteer.launch();
 	const page = await browser.newPage();
 	let pageCrawler = new PageCrawler(page);
@@ -91,7 +147,7 @@ function now() {
 			//let searchResult={price:"$333",description:"ddd"}
 			if (_.isNil(searchResult)) continue;
 
-			if (!ruleVerify(model, searchResult.description)) continue;
+			if (!verifyFun(model, searchResult)) continue;
 			let oneResult = {
 				company,
 				model: _.isArray(model) ? model[0] : model,
@@ -107,7 +163,16 @@ function now() {
 	await browser.close();
 	crawlResultList = _.sortBy(crawlResultList, ["model", "price"])
 	console.log(crawlResultList);
+
 	const csvOutput = parser.parse(crawlResultList);
 	console.log(csvOutput);
-	fs.writeFileSync('StaticIcesearchResult' + now()+'.csv', csvOutput);
+
+	fs.writeFileSync(makeCsvFilePath(filename), csvOutput);
+};
+
+(async () => {
+	makeFolder(csvFolder);
+	archiveCsvFiles();
+	await crawl(aVidiaCompanyList, nVidiaList, nVidiaVerifyFun,'nVidiaStaticIcesearchResult');
+	await crawl(AMDCompnayList, AMDList, AmdVerifyFun, 'AMDStaticIcesearchResult');
 })();
