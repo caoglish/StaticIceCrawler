@@ -1,17 +1,17 @@
 import puppeteer = require('puppeteer');
 import cheerio = require("cheerio");
 import _ = require("lodash");
-import moment = require("moment")
+import { makeFolder, ruleVerify,  amdRuleVerify, makeCsvFilePath, makeSearchUrl} from "./lib";//function
+import { csvFolder} from "./lib";//const
 const { Parser } = require('json2csv');
 const fs = require('fs');
+
 
 const FIRST_RECORD_NUMBER = 5;
 const PRICE_COLUMN = 0
 const DESCRIPTION_COLUMN = 1
 const TARGET_CONTENT_TAG = "table table table table table"
-const domain = "https://www.staticice.com.au"
-const baseUrl = domain + "/cgi-bin/search.cgi"
-const csvFolder = "./csv"
+
 const csvArchivedFolder = csvFolder + "/archived"
 let searchUrl;
 
@@ -46,57 +46,6 @@ class PageCrawler {
 	}
 }
 
-
-function makeSearchUrl(company, model) {
-	if (_.isArray(model)) {
-		model = ruleModelSuffix(model[0]) + " price:" + model[1]
-	} else {
-		model = ruleModelSuffix(model)
-	}
-
-	let query = company + "+" + model.replace(/ /g, "+");
-	console.log(query)
-	return baseUrl + "?" + "price-min=&q=" + query
-}
-
-
-//rule 1: if no ti, no super, description should no ti and no super
-function ruleVerify(model, description): boolean {
-	model = _.isArray(model) ? model[0] : model
-	if (model.includes("TI") || model.includes("SUPER")) return true;
-	if (description.toLowerCase().includes(" ti ") || description.toLowerCase().includes("super")) {
-		return false;
-	}
-	return true;
-}
-
-//rule 2: if model with ti, should search exact word, so result will not have super keyword or just normal version.
-function ruleModelSuffix(model) {
-	let addSlash = (str) => {
-		return "\"" + str + "\""
-	}
-	return model.match(/\d+ \w+$/) ? addSlash(model) : model
-}
-
-
-let amdRuleVerify = (model: string, description: string): boolean => {
-	let modelNoSpace = model.replace(/ /g, "")
-	if (model === "RX Vega 64") return true
-	if (description.includes(model)) {
-		if (description.includes(model + "0")) return false;
-		if (description.includes(model + " XT")) return false;
-	}
-	if (description.includes(modelNoSpace)) {
-		if (description.includes(modelNoSpace + "0")) return false;
-		if (description.includes(modelNoSpace + "XT")) return false;
-	}
-	if (!description.includes(model) && !description.includes(modelNoSpace)) return false;
-	return true;
-}
-function now() {
-	return moment().format('[[]YYYY-MM-DD HH.mm.ss[]]');
-}
-
 function nVidiaVerifyFun(model, searchResult) {
 	if (ruleVerify(model, searchResult.description)) return true;
 	return false;
@@ -105,25 +54,15 @@ function nVidiaVerifyFun(model, searchResult) {
 function AmdVerifyFun(model, searchResult) {
 	if (amdRuleVerify(model, searchResult.description)) return true;
 	return false;
-	// return true;
 }
 
 
-function makeFolder(folder) {
-	if (!fs.existsSync(folder)) {
-		fs.mkdirSync(folder);
-	}
-}
-
-function makeCsvFilePath(filename) {
-	return csvFolder + "/" + filename + now() + '.csv'
-}
 
 async function archiveCsvFiles() {
 	makeFolder(csvFolder);
 	makeFolder(csvArchivedFolder);
 	let filelist = fs.readdirSync(csvFolder, { withFileTypes: true }).filter((dirent) => dirent.isFile()).map((dirent) => dirent.name);;
-	//console.log(filelist);
+	
 	if (filelist.length > 0) {
 		for (let file of filelist) {
 			fs.renameSync(csvFolder + "/" + file, csvArchivedFolder + "/" + file);
