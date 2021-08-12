@@ -18,7 +18,7 @@ let searchUrl;
 const parser = new Parser();
 
 let AMDList = ["RX 5700", "RX 5700 XT", "RX 5600 XT", "RX 5500 XT", "RX Vega 64", "RX 580","RX 570","RX 560","RX 550"];
-let AMD6xList=["RX6700 XT","RX 6800","RX6800 XT","RX6900 XT"];
+let AMD6xList = ["RX6600","RX6600 XT","RX6700 XT","RX 6800","RX6800 XT","RX6900 XT"];
 let nVidiaList=["GTX 1050 TI", "GTX 1650", "GTX 1650 SUPER", "GTX 1660", "GTX 1660 SUPER", "GTX 1660 TI", "RTX 2060", "RTX 2060 SUPER", ["RTX 2070 SUPER", 600], "RTX 2080 SUPER", ["RTX 2080 TI", 1400]]
 let nVidia300List = ["RTX 3060","RTX 3060 TI","RTX 3070", ["RTX 3080",'1000'], ["RTX 3090",1500]]
 
